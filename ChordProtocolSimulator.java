@@ -326,7 +326,7 @@ public class ChordProtocolSimulator {
         printNetwork();
 
         // tests the lookup operation
-        //testLookUp();
+        testLookUp();
 
         /*
         implement this logic

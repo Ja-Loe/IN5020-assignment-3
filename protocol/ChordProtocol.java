@@ -225,59 +225,90 @@ public class ChordProtocol implements Protocol {
      *         contains the key
      */
     public LookUpResponse lookUp(int keyIndex) {
-        /* GOAL: Identifies the node whose index is responsible for the key index.
-         *  Logic as follows:
-         *  Start from any node (same node has to be used for all key lookups)
-         *  IF current node contains key -> return current node info
-         *  IF not, check finger table of current node --> find correct successor.
-         *
-         *  FIND CORRECT SUCCESSOR: (the one whose interval values contain the index of the key)
-         *  When correct successor is found --> check finger table of the node.
-         *  Continue this process until node with given key is found.
-         * */
+        // Route tracking (to show which nodes were checked)
+        LinkedHashSet<String> route = new LinkedHashSet<>();
 
-        LinkedHashSet<String> peersLookedUp = new LinkedHashSet<>();
-        // Gets the whole current node object (also our starting point)
-        NodeInterface currentNode = network.getNode("1");
-        // Adds the checked node to the lists of peers
-        peersLookedUp.add(currentNode.getName());
-
-        int currentIndex = currentNode.getId();
-        NodeInterface successor = currentNode.getSuccessor();
-        int successorIndex = successor.getId();
-
-        // check if key lies between current node and succesor
-        if (inInterval(keyIndex, currentIndex, successorIndex)) {
-            peersLookedUp.add(successor.getName());
-            return new LookUpResponse(peersLookedUp, successorIndex, successor.getName());
+        // Check if network is initialized
+        if (network == null || network.getTopology().isEmpty()) {
+            throw new IllegalStateException("Network is not initialized or empty");
         }
-        else
-            return null;
 
-        //int currentIndex = currentNode.getId();
-        //NodeInterface successorNode = currentNode.getSuccessor();
-        // Returns the ID of the node object (in this case the index of node)
-        //currentNode.getId();
-        // returns the routing table object (in this case finger table)
-        //currentNode.getRoutingTable();
-        // Nodes dont hold keys by name, they hold it by responsibility.
-        // A node is responsible for all keys whose index lies between:
-        // [predecessor.index, node.index]
-        // This means that to check if a key index is in a node,
-        // check if the keys hash index lies in this nodes responsibility interval.
+        // Choose the first available node as the starting node
+        NodeInterface currentNode = network.getTopology().values().iterator().next();
+        if (currentNode == null) {
+            throw new IllegalStateException("Starting node not found in the network");
+        }
+        // Adds the checked node for tracking
+        route.add(currentNode.getName());
 
+        while (true) {
+            // Check if the current node contains the key exactly
+            if (keyIndex == currentNode.getId()){
+                return new LookUpResponse(route, currentNode.getId(), currentNode.getName());
+            }
+
+            NodeInterface successorNode = currentNode.getSuccessor();
+            // Checks if successorNode is null
+            if (successorNode == null) {
+                throw new IllegalStateException("Successor not found for node " + currentNode.getName());
+            }
+            int currentIndex = currentNode.getId();
+            int successorIndex = successorNode.getId();
+
+            // Check if the key lies between current node and its successor
+            if (inInterval(keyIndex, currentIndex, successorIndex)){
+                route.add(successorNode.getName());
+                // Return the lookup result.
+                return new LookUpResponse(route, successorNode.getId(), successorNode.getName());
+            }
+
+            // Otherwise, find the next node using finger table
+            NodeInterface nextNode = null;
+
+            List<LinkedHashMap<String, Object>> fingerTable = (List<LinkedHashMap<String, Object>>) currentNode.getRoutingTable();
+            if  (fingerTable.size() == 0) {
+                throw new IllegalStateException("Fingertable is not initialized");
+            }
+
+            for (LinkedHashMap<String, Object> entry : fingerTable) {
+                int start = (int) entry.get("start");
+                int end = (int)  entry.get("end");
+                NodeInterface fingerSuccessor = (NodeInterface) entry.get("successor");
+
+                if (inInterval(keyIndex, start, end)) {
+                    nextNode = fingerSuccessor;
+                    break;
+                }
+            }
+            // Finger table interval only covers up to "n + 2^{m-1} - 1" (half the ring on average)
+            // If no matching interval is found in fingertable, fall back.
+            if (nextNode == null){
+                nextNode = successorNode;
+            }
+
+            // Move to next node and continue
+            currentNode = nextNode;
+            route.add(currentNode.getName());
+
+            // Safety check (to avoid infinite loops)
+            if (route.size() > network.getTopology().size() + 2) {
+                System.err.println("Lookup failed: possible ring misconfiguration.");
+                break;
+            }
+        }
+        return null; // if lookup fails
     }
-
-    // Helper function
+    /* Helper function
+    *  Checks if the keyIndex falls in a node's responsibility interval.
+    *  This returns true if node contains the key.
+    */
     private boolean inInterval(int key, int start, int end) {
-        if (start < end)
-            return key > start && key <= end;
+        if (start <= end)
+            return key >= start && key <= end;
         else // wrap-around
-            return key > start || key <= end;
+            return key >= start || key <= end;
     }
-
 }
-
 /*
  * ═════════════════════════════════════════════════════════════════════════════
  * ══════════════
