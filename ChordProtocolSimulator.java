@@ -9,6 +9,9 @@ import protocol.LookUpResponse;
 import protocol.Protocol;
 
 import java.util.*;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 
 /**
  * This class simulates the chord protocol.
@@ -311,6 +314,53 @@ public class ChordProtocolSimulator {
     }
 
     /**
+     * Generates output for all key lookups and writes to a file, including average hop count.
+     * @param outputFileName Name of the output file for the configuration
+     */
+    public void generateOutput(String outputFileName) {
+        List<String> outputLines = new ArrayList<>();
+        int totalHops = 0;
+        int lookupCount = 0;
+
+        // Perform lookup for each key
+        for (Map.Entry<String, Integer> entry : keyIndexes.entrySet()) {
+            String keyName = entry.getKey();
+            int keyIndex = entry.getValue();
+            LookUpResponse response = protocol.lookUp(keyIndex);
+
+            if (response == null) {
+                System.err.println("Lookup failed for " + keyName);
+                continue;
+            }
+
+            // Format the output as required: <key name>:<key index> <node name>:<node index> hop count:<hop count> route:<node names>
+            String route = String.join(" ", response.peers_looked_up);
+            int hopCount = response.peers_looked_up.size();
+            String line = String.format("%s:%d %s:%d hop count:%d route:%s",
+                    keyName, keyIndex,
+                    response.node_name, response.node_index,
+                    hopCount, route);
+
+            outputLines.add(line);
+            totalHops += hopCount;
+            lookupCount++;
+        }
+
+        // Calculate average hop count
+        double averageHopCount = lookupCount > 0 ? (double) totalHops / lookupCount : 0;
+        outputLines.add(String.format("average hop count = %.2f", averageHopCount));
+
+        // Write to file
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFileName))) {
+            for (String line : outputLines) {
+                writer.write(line);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.err.println("Error writing to file " + outputFileName + ": " + e.getMessage());
+        }
+    }
+    /**
      * This is the starting point of this protocol.
      * This method starts the simulation.
      *     1) builds the chord protocol
@@ -325,6 +375,7 @@ public class ChordProtocolSimulator {
         printRing();
         printNetwork();
 
+        System.out.println("RUNNING THE TEST LOOKUP");
         // tests the lookup operation
         testLookUp();
 
@@ -332,6 +383,9 @@ public class ChordProtocolSimulator {
         implement this logic
          */
         // Look up all the key, print out as required in the Assignment Description
+        System.out.println("RUNNING THE GENERATE OUTPUT MACHINE");
+        String outPutFileName = String.format("output_nodes_%d_m_%d.txt", nodeCount, m);
+        generateOutput(outPutFileName);
     }
 
 }
