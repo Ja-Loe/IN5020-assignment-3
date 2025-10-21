@@ -225,10 +225,55 @@ public class ChordProtocol implements Protocol {
      *         contains the key
      */
     public LookUpResponse lookUp(int keyIndex) {
-        /*
-         * implement this logic
-         */
-        return null;
+        /* GOAL: Identifies the node whose index is responsible for the key index.
+         *  Logic as follows:
+         *  Start from any node (same node has to be used for all key lookups)
+         *  IF current node contains key -> return current node info
+         *  IF not, check finger table of current node --> find correct successor.
+         *
+         *  FIND CORRECT SUCCESSOR: (the one whose interval values contain the index of the key)
+         *  When correct successor is found --> check finger table of the node.
+         *  Continue this process until node with given key is found.
+         * */
+
+        LinkedHashSet<String> peersLookedUp = new LinkedHashSet<>();
+        // Gets the whole current node object (also our starting point)
+        NodeInterface currentNode = network.getNode("1");
+        // Adds the checked node to the lists of peers
+        peersLookedUp.add(currentNode.getName());
+
+        int currentIndex = currentNode.getId();
+        NodeInterface successor = currentNode.getSuccessor();
+        int successorIndex = successor.getId();
+
+        // check if key lies between current node and succesor
+        if (inInterval(keyIndex, currentIndex, successorIndex)) {
+            peersLookedUp.add(successor.getName());
+            return new LookUpResponse(peersLookedUp, successorIndex, successor.getName());
+        }
+        else
+            return null;
+
+        //int currentIndex = currentNode.getId();
+        //NodeInterface successorNode = currentNode.getSuccessor();
+        // Returns the ID of the node object (in this case the index of node)
+        //currentNode.getId();
+        // returns the routing table object (in this case finger table)
+        //currentNode.getRoutingTable();
+        // Nodes dont hold keys by name, they hold it by responsibility.
+        // A node is responsible for all keys whose index lies between:
+        // [predecessor.index, node.index]
+        // This means that to check if a key index is in a node,
+        // check if the keys hash index lies in this nodes responsibility interval.
+
+    }
+
+    // Helper function
+    private boolean inInterval(int key, int start, int end) {
+        if (start < end)
+            return key > start && key <= end;
+        else // wrap-around
+            return key > start || key <= end;
     }
 
 }
