@@ -270,20 +270,41 @@ public class ChordProtocol implements Protocol {
                 throw new IllegalStateException("Fingertable is not initialized");
             }
 
+            /* Iterates backwards to prioritize larger intervals.
+            *  This means it iterates from the last finger.
+            *  Starting with the largerst interval allows lookup to make larger jumps towards the key,
+            *  improving efficiency and aligning with Chords standard algorithm.
+            *  This is because finger table entries covers exponensially increasing intervals.
+            * */
+            for (int i = fingerTable.size() - 1; i >= 0; i--) {
+                LinkedHashMap<String, Object> entry = fingerTable.get(i);
+                int start = (int) entry.get("start");
+                NodeInterface fingerSuccessor = (NodeInterface) entry.get("successor");
+                int successorId = fingerSuccessor.getId();
+                //System.out.println("  Finger " + (i + 1) + ": start=" + start + ", successor=" + fingerSuccessor.getName() + ":" + successorId);
+                if (inInterval(successorId, currentIndex, keyIndex)) {
+                    nextNode = fingerSuccessor;
+                    //System.out.println("  Key " + keyIndex + " closer to successor " + nextNode.getName() + ":" + successorId);
+                    break;
+                }
+            }
+
+            /* OLD LOOP TO ITERATE OVER FINGERTABLE
+            // Iterates from the first finger (index 0) to the last.
+            // Selects the first finger where keyIndex lies in the interval
+            // [start, end]
             for (LinkedHashMap<String, Object> entry : fingerTable) {
                 int start = (int) entry.get("start");
-                int end = (int)  entry.get("end");
+                int end = (int) entry.get("end");
                 NodeInterface fingerSuccessor = (NodeInterface) entry.get("successor");
-
                 if (inInterval(keyIndex, start, end)) {
                     nextNode = fingerSuccessor;
                     break;
                 }
-            }
-            // Finger table interval only covers up to "n + 2^{m-1} - 1" (half the ring on average)
-            // If no matching interval is found in fingertable, fall back.
-            if (nextNode == null){
+            }*/
+            if (nextNode == null) {
                 nextNode = successorNode;
+                //System.out.println("No finger table match, falling back to successor: " + nextNode.getName() + ":" + nextNode.getId());
             }
 
             // Move to next node and continue
