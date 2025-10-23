@@ -335,7 +335,7 @@ public class ChordProtocolSimulator {
 
             // Format the output as required: <key name>:<key index> <node name>:<node index> hop count:<hop count> route:<node names>
             String route = String.join(" ", response.peers_looked_up);
-            int hopCount = response.peers_looked_up.size();
+            int hopCount = response.peers_looked_up.size() - 1;
             String line = String.format("%s:%d %s:%d hop count:%d route:%s",
                     keyName, keyIndex,
                     response.node_name, response.node_index,
