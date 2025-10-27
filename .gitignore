@@ -1,0 +1,63 @@
+# Compiled class files
+*.class
+
+# Package Files
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+
+# Log Files
+*.log
+
+# Temp Files
+*.tmp
+*.bak
+*.swp
+*~
+
+# IDE-specific files
+.idea/
+.vscode/
+.project
+.classpath
+.settings/
+*.iml
+*.iws
+*.ipr
+*.launch
+*.sublime-project
+*.sublime-workspace
+
+# Maven
+/target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+.gradle/
+/build/
+*.bak
+*.orig
+*.rej
+# Ignore Gradle GUI workspace
+.idea/gradle.xml
+.idea/libraries
+# Ignore Gradle build output
+bin/
+out/
+
+# Eclipse
+.apt_generated
+.factorypath
+
+# OS generated files
+.DS_Store
+Thumbs.db
