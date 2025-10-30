@@ -38,8 +38,5 @@ java Simulator 1000 20
 ```
 ## Contributors
 
-- Sigurd Smeby (sigursm@uio.no): TODO
-- Håkon Rimer (haakori@uio.no): TODO
-- Jakob Loe (jakobloe@uio.no): TODO
-- Bahaa Aldeen Ghazal (bahaaalg@uio.no): `README.md` and testing.
+The assignment was relatively small, and we managed to solve most of it together in a mob programming session the day it was published.
 
